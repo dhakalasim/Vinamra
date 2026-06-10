@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GraduationCapIcon } from './Icons';
 
-export default function Navbar({ user, onSignOut }) {
+export default function Navbar({ user, role, onSignOut }) {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = () => {
@@ -60,6 +60,18 @@ export default function Navbar({ user, onSignOut }) {
           font-size: 0.82rem;
           font-weight: 600;
           color: rgba(255,255,255,0.45);
+        }
+
+        .role-badge {
+          font-family: 'Outfit', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 3px 10px;
+          border-radius: 999px;
+          border: 1px solid rgba(255,255,255,0.12);
+          color: rgba(255,255,255,0.55);
         }
 
         /* Sign Out Button */
@@ -145,6 +157,7 @@ export default function Navbar({ user, onSignOut }) {
           </div>
 
           <div className="navbar-right">
+            {role && <span className="role-badge">{role}</span>}
             {user && <span className="user-name">Hi, {user}</span>}
             <button
               className={`signout-btn${signingOut ? ' signing-out' : ''}`}

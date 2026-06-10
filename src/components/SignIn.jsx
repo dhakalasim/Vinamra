@@ -1,11 +1,52 @@
 import React, { useState } from 'react';
-import { GraduationCapIcon } from './Icons';
+import { GraduationCapIcon, UserIcon, UserCheckIcon } from './Icons';
+
+const ROLES = [
+  {
+    id: 'student',
+    label: 'Student',
+    icon: GraduationCapIcon,
+    color: '#2dd4bf',
+    email: 'student@vinamra.com',
+    password: 'vinamra123',
+    subtitle: 'Upload assignments, take quizzes & download materials',
+  },
+  {
+    id: 'teacher',
+    label: 'Teacher',
+    icon: UserCheckIcon,
+    color: '#60a5fa',
+    email: 'teacher@vinamra.com',
+    password: 'teacher123',
+    subtitle: 'Manage attendance, assessments & course content',
+  },
+  {
+    id: 'admin',
+    label: 'Admin',
+    icon: UserIcon,
+    color: '#c084fc',
+    email: 'admin@vinamra.com',
+    password: 'admin123',
+    subtitle: 'Manage grades, students, clubs & event posters',
+  },
+];
 
 export default function SignIn({ onSignIn }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [role, setRole] = useState('student');
+  const [email, setEmail] = useState(ROLES[0].email);
+  const [password, setPassword] = useState(ROLES[0].password);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const activeRole = ROLES.find(r => r.id === role);
+
+  const handleRoleChange = (newRole) => {
+    const r = ROLES.find(x => x.id === newRole);
+    setRole(newRole);
+    setEmail(r.email);
+    setPassword(r.password);
+    setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,13 +56,14 @@ export default function SignIn({ onSignIn }) {
       const res = await fetch('http://localhost:3001/api/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Login failed');
       localStorage.setItem('token', data.token);
       localStorage.setItem('userName', data.name);
-      onSignIn(data.name);
+      localStorage.setItem('userRole', data.role);
+      onSignIn({ name: data.name, role: data.role });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -33,8 +75,6 @@ export default function SignIn({ onSignIn }) {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
-
-        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         .signin-page {
           min-height: 100vh;
@@ -48,27 +88,27 @@ export default function SignIn({ onSignIn }) {
 
         .signin-card {
           width: 100%;
-          max-width: 400px;
+          max-width: 440px;
           background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.08);
           border-radius: 20px;
           padding: 2.5rem 2rem;
           backdrop-filter: blur(12px);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 80px rgba(20,184,166,0.06);
+          box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+          position: relative;
         }
 
         .signin-logo {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
         }
 
         .signin-logo-text {
           font-size: 1.4rem;
           font-weight: 800;
           color: #ffffff;
-          letter-spacing: 0.03em;
         }
 
         .signin-title {
@@ -79,23 +119,57 @@ export default function SignIn({ onSignIn }) {
         }
 
         .signin-subtitle {
-          font-size: 0.85rem;
+          font-size: 0.82rem;
           color: rgba(255,255,255,0.4);
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
+          line-height: 1.5;
         }
 
-        .form-group {
-          margin-bottom: 1.1rem;
+        .role-tabs {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 0.5rem;
+          margin-bottom: 1.5rem;
         }
+
+        .role-tab {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.35rem;
+          padding: 0.75rem 0.5rem;
+          border-radius: 12px;
+          border: 1px solid rgba(255,255,255,0.08);
+          background: rgba(255,255,255,0.02);
+          cursor: pointer;
+          transition: all 0.2s;
+          color: rgba(255,255,255,0.45);
+        }
+
+        .role-tab:hover { border-color: rgba(255,255,255,0.15); color: #fff; }
+
+        .role-tab.active {
+          border-color: var(--role-color);
+          background: color-mix(in srgb, var(--role-color) 12%, transparent);
+          color: var(--role-color);
+        }
+
+        .role-tab-label {
+          font-size: 0.72rem;
+          font-weight: 700;
+          letter-spacing: 0.04em;
+        }
+
+        .form-group { margin-bottom: 1rem; }
 
         .form-label {
           display: block;
-          font-size: 0.78rem;
+          font-size: 0.75rem;
           font-weight: 600;
-          color: rgba(255,255,255,0.5);
-          letter-spacing: 0.08em;
+          color: rgba(255,255,255,0.45);
           text-transform: uppercase;
-          margin-bottom: 0.45rem;
+          letter-spacing: 0.06em;
+          margin-bottom: 0.4rem;
         }
 
         .form-input {
@@ -108,17 +182,12 @@ export default function SignIn({ onSignIn }) {
           font-family: 'Outfit', sans-serif;
           font-size: 0.9rem;
           outline: none;
-          transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .form-input::placeholder {
-          color: rgba(255,255,255,0.2);
+          transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .form-input:focus {
-          border-color: rgba(45,212,191,0.5);
-          background: rgba(45,212,191,0.04);
-          box-shadow: 0 0 0 3px rgba(45,212,191,0.1);
+          border-color: var(--role-color, #2dd4bf);
+          box-shadow: 0 0 0 3px color-mix(in srgb, var(--role-color, #2dd4bf) 15%, transparent);
         }
 
         .error-msg {
@@ -135,112 +204,78 @@ export default function SignIn({ onSignIn }) {
         .signin-btn {
           width: 100%;
           padding: 0.85rem;
-          background: linear-gradient(90deg, #0d9488, #14b8a6, #2dd4bf);
+          background: linear-gradient(90deg, color-mix(in srgb, var(--role-color) 80%, #000), var(--role-color));
           border: none;
           border-radius: 10px;
           color: #ffffff;
           font-family: 'Outfit', sans-serif;
           font-size: 0.95rem;
           font-weight: 700;
-          letter-spacing: 0.04em;
           cursor: pointer;
-          margin-top: 0.5rem;
-          box-shadow: 0 4px 20px rgba(20,184,166,0.35);
-          transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-          position: relative;
-          overflow: hidden;
+          margin-top: 0.25rem;
+          transition: transform 0.2s, opacity 0.2s;
         }
 
-        .signin-btn:hover:not(:disabled) {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 30px rgba(20,184,166,0.5);
-        }
-
-        .signin-btn:active:not(:disabled) {
-          transform: translateY(0);
-        }
-
-        .signin-btn:disabled {
-          opacity: 0.7;
-          cursor: not-allowed;
-        }
-
-        .signin-divider {
-          border: none;
-          border-top: 1px solid rgba(255,255,255,0.06);
-          margin: 1.5rem 0 1rem;
-        }
+        .signin-btn:hover:not(:disabled) { transform: translateY(-2px); }
+        .signin-btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
         .signin-hint {
-          font-size: 0.75rem;
+          font-size: 0.72rem;
           color: rgba(255,255,255,0.25);
           text-align: center;
+          margin-top: 1.25rem;
           line-height: 1.7;
         }
 
-        .signin-hint span {
-          color: rgba(45,212,191,0.6);
-        }
-
-        /* Gradient ring decoration */
-        .signin-card::before {
-          content: '';
-          position: absolute;
-          top: -1px; left: -1px; right: -1px; bottom: -1px;
-          border-radius: 21px;
-          background: linear-gradient(135deg, rgba(45,212,191,0.15), transparent, rgba(45,212,191,0.05));
-          z-index: -1;
-          pointer-events: none;
-        }
+        .signin-hint span { color: rgba(255,255,255,0.45); }
       `}</style>
 
       <div className="signin-page">
-        <div className="signin-card" style={{ position: 'relative' }}>
-          {/* Logo */}
+        <div className="signin-card" style={{ '--role-color': activeRole.color }}>
           <div className="signin-logo">
             <GraduationCapIcon size={24} style={{ color: '#ffffff' }} />
             <span className="signin-logo-text">Vinamra</span>
           </div>
 
-          <h1 className="signin-title">Welcome back</h1>
-          <p className="signin-subtitle">Sign in to upload your assignments</p>
+          <h1 className="signin-title">Sign in as {activeRole.label}</h1>
+          <p className="signin-subtitle">{activeRole.subtitle}</p>
+
+          <div className="role-tabs">
+            {ROLES.map(r => {
+              const Icon = r.icon;
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`role-tab${role === r.id ? ' active' : ''}`}
+                  style={{ '--role-color': r.color }}
+                  onClick={() => handleRoleChange(r.id)}
+                >
+                  <Icon size={18} />
+                  <span className="role-tab-label">{r.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label className="form-label">Email</label>
-              <input
-                className="form-input"
-                type="email"
-                placeholder="you@vinamra.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoFocus
-              />
+              <input className="form-input" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
             </div>
-
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input
-                className="form-input"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+              <input className="form-input" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
             </div>
-
-            {error && <div className="error-msg">⚠️ {error}</div>}
-
+            {error && <div className="error-msg">{error}</div>}
             <button className="signin-btn" type="submit" disabled={loading}>
-              {loading ? 'Signing in…' : 'Sign In →'}
+              {loading ? 'Signing in…' : `Sign In as ${activeRole.label} →`}
             </button>
           </form>
 
-          <hr className="signin-divider" />
           <p className="signin-hint">
-            Demo: <span>student@vinamra.com</span> / <span>vinamra123</span>
+            Demo credentials auto-fill per role.<br />
+            <span>{activeRole.email}</span> / <span>{activeRole.password}</span>
           </p>
         </div>
       </div>

@@ -1,15 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
-import UploadCircle from './components/UploadCircle';
-import UploadedList from './components/UploadedList';
 import SignIn from './components/SignIn';
+import StudentDashboard from './components/dashboard/StudentDashboard';
+import TeacherDashboard from './components/dashboard/TeacherDashboard';
+import AdminDashboard from './components/dashboard/AdminDashboard';
+import { initStore } from './data/store';
 
 function App() {
   const [user, setUser] = useState(null);
-  const [uploadedFiles, setUploadedFiles] = useState([]);
   const [checking, setChecking] = useState(true);
 
-  // On load, verify stored token
+  useEffect(() => {
+    initStore();
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) { setChecking(false); return; }
@@ -19,14 +23,17 @@ function App() {
     })
       .then(r => r.ok ? r.json() : null)
       .then(data => {
-        if (data) setUser(data.name);
-        else localStorage.removeItem('token');
+        if (data) setUser({ name: data.name, role: data.role });
+        else {
+          localStorage.removeItem('token');
+          localStorage.removeItem('userRole');
+        }
       })
       .catch(() => {})
       .finally(() => setChecking(false));
   }, []);
 
-  const handleSignIn = (name) => setUser(name);
+  const handleSignIn = (userData) => setUser(userData);
 
   const handleSignOut = async () => {
     const token = localStorage.getItem('token');
@@ -36,13 +43,13 @@ function App() {
     }).catch(() => {});
     localStorage.removeItem('token');
     localStorage.removeItem('userName');
+    localStorage.removeItem('userRole');
     setUser(null);
-    setUploadedFiles([]);
   };
 
   if (checking) {
     return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0d1117 0%, #0a2a2a 50%, #0d1117 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={loadingStyle}>
         <span style={{ color: 'rgba(255,255,255,0.3)', fontFamily: 'Outfit, sans-serif' }}>Loading…</span>
       </div>
     );
@@ -50,40 +57,31 @@ function App() {
 
   if (!user) return <SignIn onSignIn={handleSignIn} />;
 
+  const roleLabels = { student: 'Student', teacher: 'Teacher', admin: 'Admin' };
+
   return (
-    <div style={styles.appContainer}>
-      <Navbar user={user} onSignOut={handleSignOut} />
-      <div style={styles.body}>
-        <div style={styles.center}>
-          <UploadCircle onUpload={(f) => setUploadedFiles(prev => [...prev, f])} />
-        </div>
-        <UploadedList
-          files={uploadedFiles}
-          onDelete={(index) => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
-        />
-      </div>
+    <div style={appStyle}>
+      <Navbar user={user.name} role={roleLabels[user.role]} onSignOut={handleSignOut} />
+      {user.role === 'student' && <StudentDashboard userName={user.name} />}
+      {user.role === 'teacher' && <TeacherDashboard userName={user.name} />}
+      {user.role === 'admin' && <AdminDashboard userName={user.name} />}
     </div>
   );
 }
 
-const styles = {
-  appContainer: {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #0d1117 0%, #0a2a2a 50%, #0d1117 100%)',
-  },
-  body: {
-    flex: 1,
-    display: 'flex',
-    overflow: 'hidden',
-  },
-  center: {
-    flex: 1,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+const appStyle = {
+  display: 'flex',
+  flexDirection: 'column',
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #0d1117 0%, #0a2a2a 50%, #0d1117 100%)',
+};
+
+const loadingStyle = {
+  minHeight: '100vh',
+  background: 'linear-gradient(135deg, #0d1117 0%, #0a2a2a 50%, #0d1117 100%)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
 };
 
 export default App;
