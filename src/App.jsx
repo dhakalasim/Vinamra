@@ -57,7 +57,10 @@ function App() {
         <div style={styles.center}>
           <UploadCircle onUpload={(f) => setUploadedFiles(prev => [...prev, f])} />
         </div>
-        <UploadedList files={uploadedFiles} />
+        <UploadedList
+          files={uploadedFiles}
+          onDelete={(index) => setUploadedFiles(prev => prev.filter((_, i) => i !== index))}
+        />
       </div>
     </div>
   );
